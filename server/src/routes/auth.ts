@@ -56,7 +56,7 @@ router.get("/github/callback", async (req, res) => {
       headers: {
         Accept: "application/vnd.github+json",
         Authorization: `Bearer ${tokenJson.access_token}`,
-        "User-Agent": "openputman",
+        "User-Agent": "openpostman.dev",
       },
     });
 

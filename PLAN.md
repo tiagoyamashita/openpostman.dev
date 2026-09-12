@@ -9,7 +9,7 @@ A browser API client with Postman-style layout:
 - Bottom/right: response viewer (status, headers, body)
 - Top bar: GitHub login, Save / Sync, logo
 
-**Persistence:** no user database. After GitHub OAuth, create or update one **private Gist** (`openpostman-workspace.json`) in the user’s account. Local edits sync on Save and on login load.
+**Persistence:** no user database. After GitHub OAuth, create or update one **private Gist** (`openpostman.dev-workspace.json`) in the user’s account. Local edits sync on Save and on login load.
 
 **Out of scope for v1:** workspaces/teams, mock servers, tests/scripts, GraphQL/WebSocket, import/export Postman format, environments UI beyond a simple key-value map stored in the same Gist.
 
@@ -78,7 +78,7 @@ type Workspace = {
 }
 ```
 
-Gist discovery: search authenticated user’s gists for description `openpostman-workspace`; create if missing.
+Gist discovery: search authenticated user’s gists for description `openpostman.dev-workspace`; create if missing.
 
 ## Server routes
 

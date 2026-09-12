@@ -12,9 +12,9 @@ import {
 } from "./types";
 import { safeJsonParse } from "./json";
 
-const EXPORT_FORMAT = "openpostman";
+export const EXPORT_FORMAT = "openpostman.dev";
 /** Files exported before the project was renamed. */
-const LEGACY_EXPORT_FORMAT = "openputman";
+const LEGACY_EXPORT_FORMATS = ["openpostman", "openputman"] as const;
 
 export type ExportKind = "workspace" | "collection" | "request";
 
@@ -118,7 +118,10 @@ export function parseOpenPostmanExport(raw: string): OpenPostmanExport {
   }
 
   const format = isRecord(parsed) ? parsed.format : null;
-  const knownFormat = format === EXPORT_FORMAT || format === LEGACY_EXPORT_FORMAT;
+  const knownFormat =
+    format === EXPORT_FORMAT ||
+    (typeof format === "string" &&
+      (LEGACY_EXPORT_FORMATS as readonly string[]).includes(format));
   if (!isRecord(parsed) || !knownFormat || parsed.version !== 1) {
     throw new Error(`Not an OpenPostman export (expected format "${EXPORT_FORMAT}" version 1)`);
   }
@@ -304,7 +307,7 @@ export function downloadExport(payload: OpenPostmanExport): void {
       : payload.kind === "collection"
         ? slug(payload.collection?.name ?? "collection")
         : slug(payload.request?.name ?? "request");
-  const filename = `openpostman-${payload.kind}-${namePart}-${stamp}.json`;
+  const filename = `openpostman.dev-${payload.kind}-${namePart}-${stamp}.json`;
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");

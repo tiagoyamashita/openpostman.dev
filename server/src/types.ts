@@ -57,11 +57,13 @@ export type Workspace = {
   activeEnvironmentId: string | null;
 };
 
-export const GIST_DESCRIPTION = "openpostman-workspace";
-export const GIST_FILENAME = "openpostman-workspace.json";
+export const GIST_DESCRIPTION = "openpostman.dev-workspace";
+export const GIST_FILENAME = "openpostman.dev-workspace.json";
 /** Gist naming used before the project was renamed; still read and migrated on save. */
 export const LEGACY_GIST_DESCRIPTION = "openputman-workspace";
 export const LEGACY_GIST_FILENAME = "openputman-workspace.json";
+export const PRIOR_GIST_DESCRIPTION = "openpostman-workspace";
+export const PRIOR_GIST_FILENAME = "openpostman-workspace.json";
 
 function createId(): string {
   return crypto.randomUUID();

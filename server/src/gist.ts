@@ -4,6 +4,8 @@ import {
   GIST_FILENAME,
   LEGACY_GIST_DESCRIPTION,
   LEGACY_GIST_FILENAME,
+  PRIOR_GIST_DESCRIPTION,
+  PRIOR_GIST_FILENAME,
   normalizeWorkspace,
   type Workspace,
 } from "./types.js";
@@ -19,7 +21,7 @@ function githubHeaders(token: string): HeadersInit {
   return {
     Accept: "application/vnd.github+json",
     Authorization: `Bearer ${token}`,
-    "User-Agent": "openpostman",
+    "User-Agent": "openpostman.dev",
     "X-GitHub-Api-Version": "2022-11-28",
   };
 }
@@ -42,13 +44,21 @@ async function listGists(token: string): Promise<Gist[]> {
   return gists;
 }
 
+function gistFile(
+  gist: Gist,
+  filename: string,
+): GistFile | undefined {
+  return (
+    gist.files[filename] ??
+    Object.values(gist.files).find((f) => f.filename === filename)
+  );
+}
+
 function parseWorkspaceFromGist(gist: Gist): Workspace | null {
   const file =
-    gist.files[GIST_FILENAME] ??
-    gist.files[LEGACY_GIST_FILENAME] ??
-    Object.values(gist.files).find(
-      (f) => f.filename === GIST_FILENAME || f.filename === LEGACY_GIST_FILENAME,
-    ) ??
+    gistFile(gist, GIST_FILENAME) ??
+    gistFile(gist, PRIOR_GIST_FILENAME) ??
+    gistFile(gist, LEGACY_GIST_FILENAME) ??
     Object.values(gist.files)[0];
   if (!file?.content) return null;
   try {
@@ -64,7 +74,10 @@ export async function loadOrCreateWorkspace(
 ): Promise<{ workspace: Workspace; gistId: string }> {
   const gists = await listGists(token);
   const existing = gists.find(
-    (g) => g.description === GIST_DESCRIPTION || g.description === LEGACY_GIST_DESCRIPTION,
+    (g) =>
+      g.description === GIST_DESCRIPTION ||
+      g.description === PRIOR_GIST_DESCRIPTION ||
+      g.description === LEGACY_GIST_DESCRIPTION,
   );
 
   if (existing) {
@@ -112,7 +125,9 @@ async function currentWorkspaceFilename(token: string, gistId: string): Promise<
   });
   if (!res.ok) return GIST_FILENAME;
   const gist = (await res.json()) as Gist;
-  return LEGACY_GIST_FILENAME in gist.files ? LEGACY_GIST_FILENAME : GIST_FILENAME;
+  if (LEGACY_GIST_FILENAME in gist.files) return LEGACY_GIST_FILENAME;
+  if (PRIOR_GIST_FILENAME in gist.files) return PRIOR_GIST_FILENAME;
+  return GIST_FILENAME;
 }
 
 export async function saveWorkspace(

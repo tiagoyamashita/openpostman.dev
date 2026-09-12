@@ -56,8 +56,8 @@ Update the GitHub OAuth App homepage/callback to your production domain when ena
 
 | Mode | Where data lives |
 |------|------------------|
-| Guest (default) | Browser `localStorage` (`openpostman-workspace`) |
-| Signed in | Private GitHub Gist described as `openpostman-workspace` |
+| Guest (default) | Browser `localStorage` (`openpostman.dev-workspace`) |
+| Signed in | Private GitHub Gist described as `openpostman.dev-workspace` |
 
 ## Projects
 
