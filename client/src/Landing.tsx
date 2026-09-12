@@ -1,6 +1,6 @@
 import "./landing.css";
 
-const REPO_URL = "https://github.com/tiagoyamashita/openputman";
+const REPO_URL = "https://github.com/tiagoyamashita/openpostman.dev";
 const APP_ROUTE = "#/app";
 
 function GithubMark() {
