@@ -2,6 +2,8 @@ import {
   emptyWorkspace,
   GIST_DESCRIPTION,
   GIST_FILENAME,
+  LEGACY_GIST_DESCRIPTION,
+  LEGACY_GIST_FILENAME,
   normalizeWorkspace,
   type Workspace,
 } from "./types.js";
@@ -17,7 +19,7 @@ function githubHeaders(token: string): HeadersInit {
   return {
     Accept: "application/vnd.github+json",
     Authorization: `Bearer ${token}`,
-    "User-Agent": "openputman",
+    "User-Agent": "openpostman",
     "X-GitHub-Api-Version": "2022-11-28",
   };
 }
@@ -43,7 +45,10 @@ async function listGists(token: string): Promise<Gist[]> {
 function parseWorkspaceFromGist(gist: Gist): Workspace | null {
   const file =
     gist.files[GIST_FILENAME] ??
-    Object.values(gist.files).find((f) => f.filename === GIST_FILENAME) ??
+    gist.files[LEGACY_GIST_FILENAME] ??
+    Object.values(gist.files).find(
+      (f) => f.filename === GIST_FILENAME || f.filename === LEGACY_GIST_FILENAME,
+    ) ??
     Object.values(gist.files)[0];
   if (!file?.content) return null;
   try {
@@ -58,7 +63,9 @@ export async function loadOrCreateWorkspace(
   token: string,
 ): Promise<{ workspace: Workspace; gistId: string }> {
   const gists = await listGists(token);
-  const existing = gists.find((g) => g.description === GIST_DESCRIPTION);
+  const existing = gists.find(
+    (g) => g.description === GIST_DESCRIPTION || g.description === LEGACY_GIST_DESCRIPTION,
+  );
 
   if (existing) {
     const detailRes = await fetch(`https://api.github.com/gists/${existing.id}`, {
@@ -99,11 +106,21 @@ export async function loadOrCreateWorkspace(
   return { workspace, gistId: created.id };
 }
 
+async function currentWorkspaceFilename(token: string, gistId: string): Promise<string> {
+  const res = await fetch(`https://api.github.com/gists/${gistId}`, {
+    headers: githubHeaders(token),
+  });
+  if (!res.ok) return GIST_FILENAME;
+  const gist = (await res.json()) as Gist;
+  return LEGACY_GIST_FILENAME in gist.files ? LEGACY_GIST_FILENAME : GIST_FILENAME;
+}
+
 export async function saveWorkspace(
   token: string,
   gistId: string,
   workspace: Workspace,
 ): Promise<void> {
+  const targetFile = await currentWorkspaceFilename(token, gistId);
   const res = await fetch(`https://api.github.com/gists/${gistId}`, {
     method: "PATCH",
     headers: {
@@ -113,7 +130,8 @@ export async function saveWorkspace(
     body: JSON.stringify({
       description: GIST_DESCRIPTION,
       files: {
-        [GIST_FILENAME]: {
+        [targetFile]: {
+          filename: GIST_FILENAME,
           content: JSON.stringify(workspace, null, 2),
         },
       },
