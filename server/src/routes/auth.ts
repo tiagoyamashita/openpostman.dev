@@ -56,7 +56,7 @@ router.get("/github/callback", async (req, res) => {
       headers: {
         Accept: "application/vnd.github+json",
         Authorization: `Bearer ${tokenJson.access_token}`,
-        "User-Agent": "openputman",
+        "User-Agent": "openpostman.dev",
       },
     });
 
@@ -105,7 +105,7 @@ router.post("/logout", (req, res) => {
       res.status(500).json({ error: "Logout failed" });
       return;
     }
-    res.clearCookie("openputman.sid");
+    res.clearCookie(config.sessionCookieName);
     res.json({ ok: true });
   });
 });

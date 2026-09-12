@@ -14,8 +14,11 @@ import { safeJsonParse } from "./json";
 
 export type ExportKind = "workspace" | "collection" | "request";
 
-export type OpenputmanExport = {
-  format: "openputman";
+export const EXPORT_FORMAT = "openpostman.dev";
+const LEGACY_EXPORT_FORMAT = "openputman";
+
+export type OpenpostmanExport = {
+  format: typeof EXPORT_FORMAT;
   version: 1;
   kind: ExportKind;
   exportedAt: string;
@@ -77,10 +80,10 @@ export function buildExport(
   workspace: Workspace,
   collectionId: string | null,
   requestId: string | null,
-): OpenputmanExport {
+): OpenpostmanExport {
   const exportedAt = new Date().toISOString();
   if (kind === "workspace") {
-    return { format: "openputman", version: 1, kind, exportedAt, workspace };
+    return { format: EXPORT_FORMAT, version: 1, kind, exportedAt, workspace };
   }
 
   const project = getActiveProject(workspace);
@@ -91,7 +94,7 @@ export function buildExport(
   }
 
   if (kind === "collection") {
-    return { format: "openputman", version: 1, kind, exportedAt, collection };
+    return { format: EXPORT_FORMAT, version: 1, kind, exportedAt, collection };
   }
 
   const request =
@@ -100,10 +103,10 @@ export function buildExport(
     throw new Error("No request to export");
   }
 
-  return { format: "openputman", version: 1, kind, exportedAt, request };
+  return { format: EXPORT_FORMAT, version: 1, kind, exportedAt, request };
 }
 
-export function parseOpenputmanExport(raw: string): OpenputmanExport {
+export function parseOpenpostmanExport(raw: string): OpenpostmanExport {
   if (!raw.trim()) {
     throw new Error("Export file is empty");
   }
@@ -113,8 +116,14 @@ export function parseOpenputmanExport(raw: string): OpenputmanExport {
     throw new Error("Export file must be valid JSON");
   }
 
-  if (!isRecord(parsed) || parsed.format !== "openputman" || parsed.version !== 1) {
-    throw new Error('Not an OpenPutMan export (expected format "openputman" version 1)');
+  if (
+    !isRecord(parsed) ||
+    (parsed.format !== EXPORT_FORMAT && parsed.format !== LEGACY_EXPORT_FORMAT) ||
+    parsed.version !== 1
+  ) {
+    throw new Error(
+      `Not an openpostman.dev export (expected format "${EXPORT_FORMAT}" version 1)`,
+    );
   }
 
   const kind = parsed.kind;
@@ -126,7 +135,7 @@ export function parseOpenputmanExport(raw: string): OpenputmanExport {
     const workspace = normalizeWorkspace(parsed.workspace);
     if (!workspace) throw new Error("Invalid workspace in export");
     return {
-      format: "openputman",
+      format: EXPORT_FORMAT,
       version: 1,
       kind,
       exportedAt: typeof parsed.exportedAt === "string" ? parsed.exportedAt : "",
@@ -138,7 +147,7 @@ export function parseOpenputmanExport(raw: string): OpenputmanExport {
     if (!isCollection(parsed.collection)) throw new Error("Invalid collection in export");
     const collection = parsed.collection;
     return {
-      format: "openputman",
+      format: EXPORT_FORMAT,
       version: 1,
       kind,
       exportedAt: typeof parsed.exportedAt === "string" ? parsed.exportedAt : "",
@@ -151,7 +160,7 @@ export function parseOpenputmanExport(raw: string): OpenputmanExport {
 
   if (!isApiRequest(parsed.request)) throw new Error("Invalid request in export");
   return {
-    format: "openputman",
+    format: EXPORT_FORMAT,
     version: 1,
     kind,
     exportedAt: typeof parsed.exportedAt === "string" ? parsed.exportedAt : "",
@@ -208,7 +217,7 @@ export type LoadResult = {
 
 export function applyExportToWorkspace(
   current: Workspace,
-  payload: OpenputmanExport,
+  payload: OpenpostmanExport,
   activeCollectionId: string | null,
 ): LoadResult {
   switch (payload.kind) {
@@ -290,7 +299,7 @@ export function applyExportToWorkspace(
   }
 }
 
-export function downloadExport(payload: OpenputmanExport): void {
+export function downloadExport(payload: OpenpostmanExport): void {
   const stamp = payload.exportedAt.slice(0, 10) || "export";
   const namePart =
     payload.kind === "workspace"
@@ -298,7 +307,7 @@ export function downloadExport(payload: OpenputmanExport): void {
       : payload.kind === "collection"
         ? slug(payload.collection?.name ?? "collection")
         : slug(payload.request?.name ?? "request");
-  const filename = `openputman-${payload.kind}-${namePart}-${stamp}.json`;
+  const filename = `openpostman.dev-${payload.kind}-${namePart}-${stamp}.json`;
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");

@@ -16,7 +16,7 @@ import {
   applyExportToWorkspace,
   buildExport,
   downloadExport,
-  parseOpenputmanExport,
+  parseOpenpostmanExport,
 } from "./exportFormat";
 import { collectUnresolved, interpolate } from "./interpolate";
 import { formatJsonBody } from "./json";
@@ -475,7 +475,7 @@ export default function App() {
     if (!file || !workspace) return;
     try {
       const raw = await file.text();
-      const payload = parseOpenputmanExport(raw);
+      const payload = parseOpenpostmanExport(raw);
       const next = applyExportToWorkspace(workspace, payload, collectionId);
       setWorkspace(next.workspace);
       setCollectionId(next.collectionId);
@@ -729,7 +729,7 @@ export default function App() {
   if (booting) {
     return (
       <div className="landing">
-        <p className="muted">Loading OpenPutMan…</p>
+        <p className="muted">Loading openpostman.dev…</p>
       </div>
     );
   }
@@ -762,7 +762,7 @@ export default function App() {
           <div className="brand">
             <img src="/logo.png" alt="" />
             <div>
-              <h1>OpenPutMan</h1>
+              <h1>openpostman.dev</h1>
               <span>
                 {user
                   ? "Collections sync to your GitHub Gist"
