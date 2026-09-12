@@ -17,16 +17,20 @@ function GithubMark() {
 export default function Landing() {
   return (
     <div className="landing">
-      <nav className="landing-nav">
+      <a className="skip-link" href="#main">
+        Skip to content
+      </a>
+      <nav className="landing-nav" aria-label="Primary">
         <a className="landing-logo" href="#/">
-          <img src="/logo.png" alt="" />
+          <img src="/logo.png" alt="OpenPostman" width={36} height={36} />
           <span>OpenPostman</span>
         </a>
         <div className="landing-nav-links">
           <a href="#read">Read APIs</a>
           <a href="#test">Test APIs</a>
           <a href="#share">Share</a>
-          <a href={REPO_URL} target="_blank" rel="noreferrer">
+          <a href="#faq">FAQ</a>
+          <a href={REPO_URL} target="_blank" rel="noopener noreferrer">
             GitHub
           </a>
           <a className="btn btn-primary" href={APP_ROUTE}>
@@ -35,8 +39,16 @@ export default function Landing() {
         </div>
       </nav>
 
+      <main id="main">
+
       <header className="landing-hero">
-        <img className="landing-hero-logo" src="/logo.png" alt="OpenPostman" />
+        <img
+          className="landing-hero-logo"
+          src="/logo.png"
+          alt="OpenPostman logo, a Japanese red post box"
+          width={240}
+          height={240}
+        />
         <p className="landing-eyebrow">
           Free &amp; open source <span className="landing-eyebrow-dot">·</span> openpostman.dev
         </p>
@@ -58,7 +70,7 @@ export default function Landing() {
             <GithubMark />
             Sign in with GitHub
           </a>
-          <a className="btn btn-lg" href={REPO_URL} target="_blank" rel="noreferrer">
+          <a className="btn btn-lg" href={REPO_URL} target="_blank" rel="noopener noreferrer">
             View the source
           </a>
         </div>
@@ -161,6 +173,44 @@ export default function Landing() {
         </ol>
       </section>
 
+      <section className="landing-section" id="faq">
+        <div className="landing-section-head">
+          <h2>FAQ</h2>
+          <p>Short answers for people comparing API clients and wondering how OpenPostman stores data.</p>
+        </div>
+        <dl className="landing-faq">
+          <div>
+            <dt>Is OpenPostman free?</dt>
+            <dd>
+              Yes. OpenPostman is a free, Apache 2.0–licensed open-source project. There is no paid
+              tier and no seat limit.
+            </dd>
+          </div>
+          <div>
+            <dt>Do I need an account to test APIs?</dt>
+            <dd>
+              No. You can read specs and send requests as a guest. Collections stay in this
+              browser&rsquo;s local storage until you choose to sign in.
+            </dd>
+          </div>
+          <div>
+            <dt>How do I share an API collection with my team?</dt>
+            <dd>
+              Sign in with GitHub and OpenPostman saves the workspace to a private Gist you own.
+              Share that Gist, or export JSON, so everyone tests the same library.
+            </dd>
+          </div>
+          <div>
+            <dt>Is OpenPostman a Postman alternative?</dt>
+            <dd>
+              OpenPostman is a free, open-source API client in the browser. Import OpenAPI 3.x or
+              Swagger 2.0, send real HTTP requests, and keep collections on GitHub instead of a
+              vendor database.
+            </dd>
+          </div>
+        </dl>
+      </section>
+
       <section className="landing-closing">
         <h2>Open source, all the way down</h2>
         <p>
@@ -171,19 +221,20 @@ export default function Landing() {
           <a className="btn btn-primary btn-lg" href={APP_ROUTE}>
             Open the app
           </a>
-          <a className="btn btn-lg" href={REPO_URL} target="_blank" rel="noreferrer">
+          <a className="btn btn-lg" href={REPO_URL} target="_blank" rel="noopener noreferrer">
             Read the code
           </a>
         </div>
       </section>
+      </main>
 
       <footer className="landing-footer">
         <span>OpenPostman — free, open-source API client</span>
         <div>
-          <a href={REPO_URL} target="_blank" rel="noreferrer">
+          <a href={REPO_URL} target="_blank" rel="noopener noreferrer">
             GitHub
           </a>
-          <a href={`${REPO_URL}/blob/main/LICENSE`} target="_blank" rel="noreferrer">
+          <a href={`${REPO_URL}/blob/main/LICENSE`} target="_blank" rel="noopener noreferrer">
             Apache 2.0
           </a>
         </div>

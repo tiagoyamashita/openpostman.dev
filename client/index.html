@@ -2,21 +2,136 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/png" href="/logo.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OpenPostman — free open-source API client</title>
+    <meta
+      name="description"
+      content="OpenPostman is a free, open-source API client in the browser. Import OpenAPI or Swagger to read an API, send real HTTP requests to test it, and share one collection library over GitHub."
+    />
+    <meta
+      name="keywords"
+      content="OpenPostman, open source API client, Postman alternative, OpenAPI, Swagger, test APIs, GitHub Gist, free API tester"
+    />
+    <meta name="author" content="OpenPostman" />
+    <meta name="application-name" content="OpenPostman" />
+    <meta name="theme-color" content="#1f2328" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://openpostman.dev/" />
+    <link rel="icon" type="image/png" href="/logo.png" />
+    <link rel="apple-touch-icon" href="/logo.png" />
+    <link rel="manifest" href="/site.webmanifest" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="OpenPostman" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:url" content="https://openpostman.dev/" />
+    <meta property="og:title" content="OpenPostman — free open-source API client" />
     <meta
-      name="description"
-      content="OpenPostman is a free, open-source API client for the browser: import a spec to read an API, send real requests to test it, and share one collection library with your team over GitHub."
+      property="og:description"
+      content="Read OpenAPI specs, send real HTTP requests, and share one collection library with your team over GitHub. No account required."
     />
-    <title>OpenPostman — free, open-source API client</title>
+    <meta property="og:image" content="https://openpostman.dev/logo.png" />
+    <meta property="og:image:alt" content="OpenPostman logo: a Japanese red post box" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="878" />
+    <meta property="og:image:height" content="878" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="OpenPostman — free open-source API client" />
+    <meta
+      name="twitter:description"
+      content="Read OpenAPI specs, send real HTTP requests, and share one collection library with your team over GitHub."
+    />
+    <meta name="twitter:image" content="https://openpostman.dev/logo.png" />
+    <meta name="twitter:image:alt" content="OpenPostman logo: a Japanese red post box" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "WebSite",
+            "@id": "https://openpostman.dev/#website",
+            "url": "https://openpostman.dev/",
+            "name": "OpenPostman",
+            "description": "Free, open-source API client for the browser.",
+            "inLanguage": "en",
+            "publisher": { "@id": "https://openpostman.dev/#app" }
+          },
+          {
+            "@type": "WebApplication",
+            "@id": "https://openpostman.dev/#app",
+            "name": "OpenPostman",
+            "alternateName": ["openpostman.dev", "OpenPutMan"],
+            "url": "https://openpostman.dev/",
+            "image": "https://openpostman.dev/logo.png",
+            "description": "Free, open-source API client. Import OpenAPI or Swagger to read an API, send HTTP requests to test it, and share collections over GitHub Gists.",
+            "applicationCategory": "DeveloperApplication",
+            "operatingSystem": "Any",
+            "browserRequirements": "Requires JavaScript",
+            "offers": {
+              "@type": "Offer",
+              "price": "0",
+              "priceCurrency": "USD"
+            },
+            "license": "https://github.com/tiagoyamashita/openpostman.dev/blob/main/LICENSE",
+            "codeRepository": "https://github.com/tiagoyamashita/openpostman.dev",
+            "isAccessibleForFree": true
+          },
+          {
+            "@type": "FAQPage",
+            "@id": "https://openpostman.dev/#faq",
+            "mainEntity": [
+              {
+                "@type": "Question",
+                "name": "Is OpenPostman free?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Yes. OpenPostman is a free, Apache 2.0–licensed open-source project. There is no paid tier and no seat limit."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Do I need an account to test APIs?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "No. You can read specs and send requests as a guest. Collections stay in this browser's local storage until you choose to sign in."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "How do I share an API collection with my team?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Sign in with GitHub and OpenPostman saves the workspace to a private Gist you own. Share that Gist, or export JSON, so everyone tests the same library."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Is OpenPostman a Postman alternative?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "OpenPostman is a free, open-source API client in the browser. Import OpenAPI 3.x or Swagger 2.0, send real HTTP requests, and keep collections on GitHub instead of a vendor database."
+                }
+              }
+            ]
+          }
+        ]
+      }
+    </script>
   </head>
   <body>
+    <noscript>
+      <p>
+        OpenPostman is a free, open-source API client. Enable JavaScript to import OpenAPI specs,
+        send HTTP requests, and share collections over GitHub at
+        <a href="https://openpostman.dev/">openpostman.dev</a>.
+      </p>
+    </noscript>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
