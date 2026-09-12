@@ -1,0 +1,19 @@
+{
+  "name": "OpenPostman",
+  "short_name": "OpenPostman",
+  "description": "Free, open-source API client for the browser. Read OpenAPI specs, send requests, and share collections over GitHub.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#1f2328",
+  "theme_color": "#1f2328",
+  "lang": "en",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "878x878",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
