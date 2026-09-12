@@ -1,4 +1,4 @@
-# openpostman.dev: Postman-like client with GitHub storage
+# OpenPostman: Postman-like client with GitHub storage
 
 ## Product MVP
 

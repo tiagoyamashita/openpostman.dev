@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { config } from "../config.js";
+import { appUrl, config, SESSION_COOKIE_NAME } from "../config.js";
 import type { SessionUser } from "../auth.js";
 
 const router = Router();
@@ -79,7 +79,7 @@ router.get("/github/callback", async (req, res) => {
     };
 
     req.session.user = user;
-    res.redirect(config.clientOrigin);
+    res.redirect(appUrl());
   } catch (err) {
     console.error(err);
     res.status(500).send("OAuth callback failed");
@@ -105,7 +105,7 @@ router.post("/logout", (req, res) => {
       res.status(500).json({ error: "Logout failed" });
       return;
     }
-    res.clearCookie(config.sessionCookieName);
+    res.clearCookie(SESSION_COOKIE_NAME);
     res.json({ ok: true });
   });
 });

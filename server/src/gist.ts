@@ -4,6 +4,8 @@ import {
   GIST_FILENAME,
   LEGACY_GIST_DESCRIPTION,
   LEGACY_GIST_FILENAME,
+  PRIOR_GIST_DESCRIPTION,
+  PRIOR_GIST_FILENAME,
   normalizeWorkspace,
   type Workspace,
 } from "./types.js";
@@ -55,6 +57,7 @@ function gistFile(
 function parseWorkspaceFromGist(gist: Gist): Workspace | null {
   const file =
     gistFile(gist, GIST_FILENAME) ??
+    gistFile(gist, PRIOR_GIST_FILENAME) ??
     gistFile(gist, LEGACY_GIST_FILENAME) ??
     Object.values(gist.files)[0];
   if (!file?.content) return null;
@@ -72,7 +75,9 @@ export async function loadOrCreateWorkspace(
   const gists = await listGists(token);
   const existing = gists.find(
     (g) =>
-      g.description === GIST_DESCRIPTION || g.description === LEGACY_GIST_DESCRIPTION,
+      g.description === GIST_DESCRIPTION ||
+      g.description === PRIOR_GIST_DESCRIPTION ||
+      g.description === LEGACY_GIST_DESCRIPTION,
   );
 
   if (existing) {
@@ -114,11 +119,23 @@ export async function loadOrCreateWorkspace(
   return { workspace, gistId: created.id };
 }
 
+async function currentWorkspaceFilename(token: string, gistId: string): Promise<string> {
+  const res = await fetch(`https://api.github.com/gists/${gistId}`, {
+    headers: githubHeaders(token),
+  });
+  if (!res.ok) return GIST_FILENAME;
+  const gist = (await res.json()) as Gist;
+  if (LEGACY_GIST_FILENAME in gist.files) return LEGACY_GIST_FILENAME;
+  if (PRIOR_GIST_FILENAME in gist.files) return PRIOR_GIST_FILENAME;
+  return GIST_FILENAME;
+}
+
 export async function saveWorkspace(
   token: string,
   gistId: string,
   workspace: Workspace,
 ): Promise<void> {
+  const targetFile = await currentWorkspaceFilename(token, gistId);
   const res = await fetch(`https://api.github.com/gists/${gistId}`, {
     method: "PATCH",
     headers: {
@@ -128,7 +145,8 @@ export async function saveWorkspace(
     body: JSON.stringify({
       description: GIST_DESCRIPTION,
       files: {
-        [GIST_FILENAME]: {
+        [targetFile]: {
+          filename: GIST_FILENAME,
           content: JSON.stringify(workspace, null, 2),
         },
       },

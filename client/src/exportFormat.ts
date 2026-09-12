@@ -12,12 +12,13 @@ import {
 } from "./types";
 import { safeJsonParse } from "./json";
 
+export const EXPORT_FORMAT = "openpostman.dev";
+/** Files exported before the project was renamed. */
+const LEGACY_EXPORT_FORMATS = ["openpostman", "openputman"] as const;
+
 export type ExportKind = "workspace" | "collection" | "request";
 
-export const EXPORT_FORMAT = "openpostman.dev";
-const LEGACY_EXPORT_FORMAT = "openputman";
-
-export type OpenpostmanExport = {
+export type OpenPostmanExport = {
   format: typeof EXPORT_FORMAT;
   version: 1;
   kind: ExportKind;
@@ -80,7 +81,7 @@ export function buildExport(
   workspace: Workspace,
   collectionId: string | null,
   requestId: string | null,
-): OpenpostmanExport {
+): OpenPostmanExport {
   const exportedAt = new Date().toISOString();
   if (kind === "workspace") {
     return { format: EXPORT_FORMAT, version: 1, kind, exportedAt, workspace };
@@ -106,7 +107,7 @@ export function buildExport(
   return { format: EXPORT_FORMAT, version: 1, kind, exportedAt, request };
 }
 
-export function parseOpenpostmanExport(raw: string): OpenpostmanExport {
+export function parseOpenPostmanExport(raw: string): OpenPostmanExport {
   if (!raw.trim()) {
     throw new Error("Export file is empty");
   }
@@ -116,14 +117,13 @@ export function parseOpenpostmanExport(raw: string): OpenpostmanExport {
     throw new Error("Export file must be valid JSON");
   }
 
-  if (
-    !isRecord(parsed) ||
-    (parsed.format !== EXPORT_FORMAT && parsed.format !== LEGACY_EXPORT_FORMAT) ||
-    parsed.version !== 1
-  ) {
-    throw new Error(
-      `Not an openpostman.dev export (expected format "${EXPORT_FORMAT}" version 1)`,
-    );
+  const format = isRecord(parsed) ? parsed.format : null;
+  const knownFormat =
+    format === EXPORT_FORMAT ||
+    (typeof format === "string" &&
+      (LEGACY_EXPORT_FORMATS as readonly string[]).includes(format));
+  if (!isRecord(parsed) || !knownFormat || parsed.version !== 1) {
+    throw new Error(`Not an OpenPostman export (expected format "${EXPORT_FORMAT}" version 1)`);
   }
 
   const kind = parsed.kind;
@@ -217,7 +217,7 @@ export type LoadResult = {
 
 export function applyExportToWorkspace(
   current: Workspace,
-  payload: OpenpostmanExport,
+  payload: OpenPostmanExport,
   activeCollectionId: string | null,
 ): LoadResult {
   switch (payload.kind) {
@@ -299,7 +299,7 @@ export function applyExportToWorkspace(
   }
 }
 
-export function downloadExport(payload: OpenpostmanExport): void {
+export function downloadExport(payload: OpenPostmanExport): void {
   const stamp = payload.exportedAt.slice(0, 10) || "export";
   const namePart =
     payload.kind === "workspace"

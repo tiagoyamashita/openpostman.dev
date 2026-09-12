@@ -13,10 +13,11 @@ function vercelOrigin(): string | undefined {
 
 const deployedOrigin = vercelOrigin();
 
+export const SESSION_COOKIE_NAME = "openpostman.sid";
+
 export const config = {
   port: Number(process.env.PORT ?? 4000),
   clientOrigin: process.env.CLIENT_ORIGIN ?? deployedOrigin ?? "http://localhost:5173",
-  sessionCookieName: "openpostman.sid",
   sessionSecret: process.env.SESSION_SECRET ?? "dev-openpostman-secret-change-me",
   githubClientId: process.env.GITHUB_CLIENT_ID ?? "",
   githubClientSecret: process.env.GITHUB_CLIENT_SECRET ?? "",
@@ -27,10 +28,15 @@ export const config = {
       : "http://localhost:4000/auth/github/callback"),
 };
 
+/** Client URL for the request workspace; the bare origin serves the landing page. */
+export function appUrl(): string {
+  return `${config.clientOrigin.replace(/\/$/, "")}/#/app`;
+}
+
 export function assertAuthConfig(): void {
   if (!config.githubClientId || !config.githubClientSecret) {
     console.warn(
-      "[openpostman.dev] GITHUB_CLIENT_ID / GITHUB_CLIENT_SECRET not set — OAuth will fail until configured.",
+      "[openpostman] GITHUB_CLIENT_ID / GITHUB_CLIENT_SECRET not set — OAuth will fail until configured.",
     );
   }
 }

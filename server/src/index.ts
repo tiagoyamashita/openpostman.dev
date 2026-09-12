@@ -5,7 +5,7 @@ import express from "express";
 import session from "express-session";
 import cors from "cors";
 import cookieParser from "cookie-parser";
-import { assertAuthConfig, config } from "./config.js";
+import { assertAuthConfig, config, SESSION_COOKIE_NAME } from "./config.js";
 import authRoutes from "./routes/auth.js";
 import workspaceRoutes from "./routes/workspace.js";
 import proxyRoutes from "./routes/proxy.js";
@@ -27,7 +27,7 @@ app.use(cookieParser());
 app.use(express.json({ limit: "2mb" }));
 app.use(
   session({
-    name: config.sessionCookieName,
+    name: SESSION_COOKIE_NAME,
     secret: config.sessionSecret,
     resave: false,
     saveUninitialized: false,
@@ -41,7 +41,7 @@ app.use(
 );
 
 app.get("/api/health", (_req, res) => {
-  res.json({ ok: true, name: "openpostman.dev" });
+  res.json({ ok: true, name: "OpenPostman" });
 });
 
 app.use("/auth", authRoutes);
@@ -65,6 +65,6 @@ export default app;
 
 if (!process.env.VERCEL) {
   app.listen(config.port, () => {
-    console.log(`[openpostman.dev] server listening on http://localhost:${config.port}`);
+    console.log(`[openpostman] server listening on http://localhost:${config.port}`);
   });
 }

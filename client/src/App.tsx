@@ -16,7 +16,7 @@ import {
   applyExportToWorkspace,
   buildExport,
   downloadExport,
-  parseOpenpostmanExport,
+  parseOpenPostmanExport,
 } from "./exportFormat";
 import { collectUnresolved, interpolate } from "./interpolate";
 import { formatJsonBody } from "./json";
@@ -475,7 +475,7 @@ export default function App() {
     if (!file || !workspace) return;
     try {
       const raw = await file.text();
-      const payload = parseOpenpostmanExport(raw);
+      const payload = parseOpenPostmanExport(raw);
       const next = applyExportToWorkspace(workspace, payload, collectionId);
       setWorkspace(next.workspace);
       setCollectionId(next.collectionId);
@@ -729,7 +729,7 @@ export default function App() {
   if (booting) {
     return (
       <div className="landing">
-        <p className="muted">Loading openpostman.dev…</p>
+        <p className="muted">Loading OpenPostman…</p>
       </div>
     );
   }
@@ -762,7 +762,7 @@ export default function App() {
           <div className="brand">
             <img src="/logo.png" alt="" />
             <div>
-              <h1>openpostman.dev</h1>
+              <h1>OpenPostman</h1>
               <span>
                 {user
                   ? "Collections sync to your GitHub Gist"
@@ -771,6 +771,9 @@ export default function App() {
             </div>
           </div>
           <div className="topbar-actions">
+            <a className="btn" href="/" target="_blank" rel="noreferrer">
+              About
+            </a>
             <button className="btn" type="button" onClick={handleExportAll}>
               Export all
             </button>
