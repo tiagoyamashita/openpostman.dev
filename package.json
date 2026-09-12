@@ -1,5 +1,5 @@
 {
-  "name": "openputman",
+  "name": "openpostman.dev",
   "private": true,
   "type": "module",
   "main": "server/src/index.ts",

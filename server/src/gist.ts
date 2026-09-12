@@ -2,6 +2,8 @@ import {
   emptyWorkspace,
   GIST_DESCRIPTION,
   GIST_FILENAME,
+  LEGACY_GIST_DESCRIPTION,
+  LEGACY_GIST_FILENAME,
   normalizeWorkspace,
   type Workspace,
 } from "./types.js";
@@ -17,7 +19,7 @@ function githubHeaders(token: string): HeadersInit {
   return {
     Accept: "application/vnd.github+json",
     Authorization: `Bearer ${token}`,
-    "User-Agent": "openputman",
+    "User-Agent": "openpostman.dev",
     "X-GitHub-Api-Version": "2022-11-28",
   };
 }
@@ -40,10 +42,20 @@ async function listGists(token: string): Promise<Gist[]> {
   return gists;
 }
 
+function gistFile(
+  gist: Gist,
+  filename: string,
+): GistFile | undefined {
+  return (
+    gist.files[filename] ??
+    Object.values(gist.files).find((f) => f.filename === filename)
+  );
+}
+
 function parseWorkspaceFromGist(gist: Gist): Workspace | null {
   const file =
-    gist.files[GIST_FILENAME] ??
-    Object.values(gist.files).find((f) => f.filename === GIST_FILENAME) ??
+    gistFile(gist, GIST_FILENAME) ??
+    gistFile(gist, LEGACY_GIST_FILENAME) ??
     Object.values(gist.files)[0];
   if (!file?.content) return null;
   try {
@@ -58,7 +70,10 @@ export async function loadOrCreateWorkspace(
   token: string,
 ): Promise<{ workspace: Workspace; gistId: string }> {
   const gists = await listGists(token);
-  const existing = gists.find((g) => g.description === GIST_DESCRIPTION);
+  const existing = gists.find(
+    (g) =>
+      g.description === GIST_DESCRIPTION || g.description === LEGACY_GIST_DESCRIPTION,
+  );
 
   if (existing) {
     const detailRes = await fetch(`https://api.github.com/gists/${existing.id}`, {

@@ -57,8 +57,10 @@ export type Workspace = {
   activeEnvironmentId: string | null;
 };
 
-export const GIST_DESCRIPTION = "openputman-workspace";
-export const GIST_FILENAME = "openputman-workspace.json";
+export const GIST_DESCRIPTION = "openpostman.dev-workspace";
+export const GIST_FILENAME = "openpostman.dev-workspace.json";
+export const LEGACY_GIST_DESCRIPTION = "openputman-workspace";
+export const LEGACY_GIST_FILENAME = "openputman-workspace.json";
 
 function createId(): string {
   return crypto.randomUUID();

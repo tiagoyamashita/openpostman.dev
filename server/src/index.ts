@@ -27,7 +27,7 @@ app.use(cookieParser());
 app.use(express.json({ limit: "2mb" }));
 app.use(
   session({
-    name: "openputman.sid",
+    name: config.sessionCookieName,
     secret: config.sessionSecret,
     resave: false,
     saveUninitialized: false,
@@ -41,7 +41,7 @@ app.use(
 );
 
 app.get("/api/health", (_req, res) => {
-  res.json({ ok: true, name: "OpenPutMan" });
+  res.json({ ok: true, name: "openpostman.dev" });
 });
 
 app.use("/auth", authRoutes);
@@ -65,6 +65,6 @@ export default app;
 
 if (!process.env.VERCEL) {
   app.listen(config.port, () => {
-    console.log(`[openputman] server listening on http://localhost:${config.port}`);
+    console.log(`[openpostman.dev] server listening on http://localhost:${config.port}`);
   });
 }
