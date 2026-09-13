@@ -345,6 +345,7 @@ Guest mode works without OAuth. **Send** still uses the local proxy.
 | Command | What it does |
 |---------|----------------|
 | `npm run dev` | Client + server together |
+| `npm run test` | Unit and HTTP tests (Vitest) |
 | `npm run build` | `tsc` + Vite build, then server `tsc` |
 | `npm start` | Run the compiled server |
 

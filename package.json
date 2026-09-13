@@ -10,9 +10,13 @@
   "scripts": {
     "dev": "concurrently -n server,client -c orange,cyan \"npm run dev -w server\" \"npm run dev -w client\"",
     "build": "npm run build -w client && npm run build -w server",
-    "start": "npm run start -w server"
+    "start": "npm run start -w server",
+    "test": "vitest run"
   },
   "devDependencies": {
-    "concurrently": "^9.1.2"
+    "@types/supertest": "^6.0.3",
+    "concurrently": "^9.1.2",
+    "supertest": "^7.1.4",
+    "vitest": "^3.2.4"
   }
 }
