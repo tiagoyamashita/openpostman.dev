@@ -811,17 +811,16 @@ export default function App() {
   }
 
   const request = selection?.request ?? null;
-  const saveLabel = user
-    ? saving
-      ? "Saving…"
-      : dirty
+  const saveDestination = user ? "GitHub" : "this browser";
+  const saveLabel = saving
+    ? "Saving…"
+    : dirty
+      ? user
         ? "Save to GitHub"
-        : "Saved"
-    : saving
-      ? "Saving…"
-      : dirty
-        ? "Save locally"
-        : "Saved";
+        : "Save locally"
+      : user
+        ? "Saved to GitHub"
+        : "Saved locally";
 
   return (
     <div className="app-shell">
@@ -859,7 +858,16 @@ export default function App() {
               hidden
               onChange={(e) => void handleLoadFile(e.target.files?.[0] ?? null)}
             />
-            <button className="btn btn-primary" onClick={handleSave} disabled={saving || !dirty}>
+            <button
+              className={dirty ? "btn btn-primary" : "btn"}
+              onClick={handleSave}
+              disabled={saving || !dirty}
+              title={
+                dirty
+                  ? `Unsaved changes — save to ${saveDestination}`
+                  : `Everything is saved to ${saveDestination}`
+              }
+            >
               {saveLabel}
             </button>
             {user ? (
