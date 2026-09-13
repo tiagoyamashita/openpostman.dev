@@ -57,6 +57,23 @@ export async function saveWorkspace(
   return parseJson(res);
 }
 
+export async function fetchShareLink(): Promise<{ owner: string; repo: string; htmlUrl: string }> {
+  const res = await fetch("/api/share", { credentials: "include" });
+  return parseJson(res);
+}
+
+export async function inviteShareCollaborator(
+  username: string,
+): Promise<{ alreadyCollaborator: boolean; htmlUrl: string }> {
+  const res = await fetch("/api/share", {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username }),
+  });
+  return parseJson(res);
+}
+
 export async function proxyRequest(input: {
   method: string;
   url: string;

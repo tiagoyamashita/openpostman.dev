@@ -1,5 +1,9 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { ensureOpenpostmanRepo } from "../src/github-repo.js";
+import {
+  ensureOpenpostmanRepo,
+  inviteOpenpostmanCollaborator,
+  parseGitHubUsername,
+} from "../src/github-repo.js";
 
 const owner = "octocat";
 const token = "gho_test";
@@ -57,5 +61,55 @@ describe("ensureOpenpostmanRepo", () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue(jsonResponse(500, { message: "boom" }));
 
     await expect(ensureOpenpostmanRepo(token, owner)).rejects.toThrow(/Failed to look up openpostman repo \(500\)/);
+  });
+});
+
+describe("parseGitHubUsername", () => {
+  it("accepts a normal username and strips @", () => {
+    expect(parseGitHubUsername(" @octocat ")).toBe("octocat");
+  });
+
+  it("rejects invalid names", () => {
+    expect(parseGitHubUsername("")).toBeNull();
+    expect(parseGitHubUsername("-octo")).toBeNull();
+    expect(parseGitHubUsername("has space")).toBeNull();
+  });
+});
+
+describe("inviteOpenpostmanCollaborator", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("invites a collaborator on the private repo", async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(jsonResponse(200, { name: "openpostman" }))
+      .mockResolvedValueOnce(new Response(null, { status: 201 }));
+
+    await expect(inviteOpenpostmanCollaborator(token, owner, "teammate")).resolves.toEqual({
+      alreadyCollaborator: false,
+    });
+
+    const [url, init] = fetchMock.mock.calls[1]!;
+    expect(String(url)).toBe("https://api.github.com/repos/octocat/openpostman/collaborators/teammate");
+    expect(init?.method).toBe("PUT");
+    expect(JSON.parse(String(init?.body))).toEqual({ permission: "push" });
+  });
+
+  it("treats 204 as already a collaborator", async () => {
+    vi.spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(jsonResponse(200, { name: "openpostman" }))
+      .mockResolvedValueOnce(new Response(null, { status: 204 }));
+
+    await expect(inviteOpenpostmanCollaborator(token, owner, "teammate")).resolves.toEqual({
+      alreadyCollaborator: true,
+    });
+  });
+
+  it("does not invite the repo owner", async () => {
+    await expect(inviteOpenpostmanCollaborator(token, owner, "Octocat")).rejects.toThrow(
+      /already owns/,
+    );
   });
 });
