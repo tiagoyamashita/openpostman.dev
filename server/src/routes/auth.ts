@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { appUrl, config, SESSION_COOKIE_NAME } from "../config.js";
 import type { SessionUser } from "../auth.js";
+import { ensureOpenpostmanRepo, GITHUB_OAUTH_SCOPES } from "../github-repo.js";
 
 const router = Router();
 
@@ -12,7 +13,7 @@ router.get("/github", (_req, res) => {
   const params = new URLSearchParams({
     client_id: config.githubClientId,
     redirect_uri: config.githubCallbackUrl,
-    scope: "read:user gist",
+    scope: GITHUB_OAUTH_SCOPES,
   });
   res.redirect(`https://github.com/login/oauth/authorize?${params.toString()}`);
 });
@@ -79,6 +80,11 @@ router.get("/github/callback", async (req, res) => {
     };
 
     req.session.user = user;
+    try {
+      await ensureOpenpostmanRepo(user.accessToken, user.login);
+    } catch (repoErr) {
+      console.error("[openpostman] could not ensure openpostman repo", repoErr);
+    }
     res.redirect(appUrl());
   } catch (err) {
     console.error(err);

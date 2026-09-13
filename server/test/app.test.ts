@@ -34,7 +34,7 @@ describe("Express app", () => {
     const location = res.headers.location ?? "";
     expect(location).toContain("https://github.com/login/oauth/authorize");
     expect(location).toContain("client_id=test-client-id");
-    expect(location).toContain("scope=read%3Auser+gist");
+    expect(location).toContain("scope=read%3Auser+gist+repo");
   });
 
   it("requires a url on the proxy", async () => {
