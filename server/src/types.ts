@@ -47,14 +47,14 @@ export type Project = {
   name: string;
   groups: WebsiteGroup[];
   collections: Collection[];
+  environments: Environment[];
+  activeEnvironmentId: string | null;
 };
 
 export type Workspace = {
   version: 1;
   projects: Project[];
   activeProjectId: string | null;
-  environments: Environment[];
-  activeEnvironmentId: string | null;
 };
 
 export const GIST_DESCRIPTION = "openpostman.dev-workspace";
@@ -104,11 +104,11 @@ export function emptyWorkspace(): Workspace {
             ],
           },
         ],
+        environments: [],
+        activeEnvironmentId: null,
       },
     ],
     activeProjectId: projectId,
-    environments: [],
-    activeEnvironmentId: null,
   };
 }
 
@@ -174,7 +174,36 @@ function normalizeGroup(g: Record<string, unknown>): WebsiteGroup {
   };
 }
 
-function normalizeProject(p: Record<string, unknown>): Project {
+function normalizeEnvironment(value: unknown): Environment {
+  if (!isRecord(value)) {
+    return { id: createId(), name: "Default", variables: {} };
+  }
+  const variables = isRecord(value.variables)
+    ? Object.fromEntries(
+        Object.entries(value.variables).filter(
+          (entry): entry is [string, string] => typeof entry[1] === "string",
+        ),
+      )
+    : {};
+  return {
+    id: typeof value.id === "string" ? value.id : createId(),
+    name: typeof value.name === "string" ? value.name : "Environment",
+    variables,
+  };
+}
+
+function normalizeProject(
+  p: Record<string, unknown>,
+  inherited: Environment[],
+  inheritedActiveId: string | null,
+): Project {
+  const own = Array.isArray(p.environments) ? p.environments.map(normalizeEnvironment) : [];
+  const environments = own.length > 0 ? own : inherited.map((env) => ({ ...env, variables: { ...env.variables } }));
+  const activeCandidate = own.length > 0 ? p.activeEnvironmentId : inheritedActiveId;
+  const activeEnvironmentId =
+    typeof activeCandidate === "string" && environments.some((env) => env.id === activeCandidate)
+      ? activeCandidate
+      : (environments[0]?.id ?? null);
   return {
     id: typeof p.id === "string" ? p.id : createId(),
     name: typeof p.name === "string" ? p.name : "Project",
@@ -182,20 +211,24 @@ function normalizeProject(p: Record<string, unknown>): Project {
     collections: Array.isArray(p.collections)
       ? p.collections.filter(isRecord).map(normalizeCollection)
       : [],
+    environments,
+    activeEnvironmentId,
   };
 }
 
 export function normalizeWorkspace(value: unknown): Workspace | null {
   if (!isRecord(value) || value.version !== 1) return null;
 
-  const environments = Array.isArray(value.environments)
-    ? (value.environments as Environment[])
+  const inherited = Array.isArray(value.environments)
+    ? value.environments.map(normalizeEnvironment)
     : [];
-  const activeEnvironmentId =
+  const inheritedActiveId =
     typeof value.activeEnvironmentId === "string" ? value.activeEnvironmentId : null;
 
   if (Array.isArray(value.projects) && value.projects.length > 0) {
-    const projects = value.projects.filter(isRecord).map(normalizeProject);
+    const projects = value.projects
+      .filter(isRecord)
+      .map((p) => normalizeProject(p, inherited, inheritedActiveId));
     const activeProjectId =
       typeof value.activeProjectId === "string" &&
       projects.some((p) => p.id === value.activeProjectId)
@@ -205,8 +238,6 @@ export function normalizeWorkspace(value: unknown): Workspace | null {
       version: 1,
       projects,
       activeProjectId,
-      environments,
-      activeEnvironmentId,
     };
   }
 
@@ -221,14 +252,17 @@ export function normalizeWorkspace(value: unknown): Workspace | null {
     name: "My Project",
     groups,
     collections,
+    environments: inherited,
+    activeEnvironmentId:
+      inheritedActiveId && inherited.some((env) => env.id === inheritedActiveId)
+        ? inheritedActiveId
+        : (inherited[0]?.id ?? null),
   };
 
   return {
     version: 1,
     projects: [project],
     activeProjectId: project.id,
-    environments,
-    activeEnvironmentId,
   };
 }
 

@@ -6,6 +6,7 @@ import {
   withActiveProject,
   type ApiRequest,
   type Collection,
+  type Environment,
   type Project,
   type WebsiteGroup,
   type Workspace,
@@ -84,7 +85,21 @@ export function buildExport(
 ): OpenPostmanExport {
   const exportedAt = new Date().toISOString();
   if (kind === "workspace") {
-    return { format: EXPORT_FORMAT, version: 1, kind, exportedAt, workspace };
+    const project = getActiveProject(workspace);
+    if (!project) {
+      throw new Error("No project to export");
+    }
+    return {
+      format: EXPORT_FORMAT,
+      version: 1,
+      kind,
+      exportedAt,
+      workspace: {
+        version: 1,
+        projects: [project],
+        activeProjectId: project.id,
+      },
+    };
   }
 
   const project = getActiveProject(workspace);
@@ -189,6 +204,14 @@ function remintGroup(group: WebsiteGroup): WebsiteGroup {
   return { ...group, id: createId() };
 }
 
+function remintEnvironment(env: Environment): Environment {
+  return {
+    ...env,
+    id: createId(),
+    variables: { ...env.variables },
+  };
+}
+
 function remintProject(project: Project): Project {
   const groupIdMap = new Map<string, string>();
   const groups = project.groups.map((group) => {
@@ -196,6 +219,16 @@ function remintProject(project: Project): Project {
     groupIdMap.set(group.id, next.id);
     return next;
   });
+  const environments = (project.environments ?? []).map(remintEnvironment);
+  const envIdMap = new Map<string, string>();
+  project.environments?.forEach((env, index) => {
+    const next = environments[index];
+    if (next) envIdMap.set(env.id, next.id);
+  });
+  const activeEnvironmentId =
+    (project.activeEnvironmentId && envIdMap.get(project.activeEnvironmentId)) ||
+    environments[0]?.id ||
+    null;
   return {
     ...project,
     id: createId(),
@@ -206,6 +239,8 @@ function remintProject(project: Project): Project {
         collection.groupId ? (groupIdMap.get(collection.groupId) ?? null) : null,
       ),
     ),
+    environments,
+    activeEnvironmentId,
   };
 }
 
@@ -224,18 +259,17 @@ export function applyExportToWorkspace(
     case "workspace": {
       const incoming = payload.workspace;
       if (!incoming) throw new Error("Missing workspace in export");
-      const projects =
+      const imported =
         incoming.projects.length > 0
           ? incoming.projects.map(remintProject)
           : current.projects.map(remintProject);
+      const projects = [...current.projects, ...imported];
       const workspace: Workspace = {
         version: 1,
         projects,
-        activeProjectId: projects[0]?.id ?? null,
-        environments: incoming.environments ?? [],
-        activeEnvironmentId: incoming.activeEnvironmentId ?? null,
+        activeProjectId: imported[0]?.id ?? current.activeProjectId,
       };
-      const first = getActiveProject(workspace)?.collections[0];
+      const first = imported[0]?.collections[0] ?? getActiveProject(workspace)?.collections[0];
       return {
         workspace,
         collectionId: first?.id ?? null,
@@ -303,11 +337,11 @@ export function downloadExport(payload: OpenPostmanExport): void {
   const stamp = payload.exportedAt.slice(0, 10) || "export";
   const namePart =
     payload.kind === "workspace"
-      ? "workspace"
+      ? slug(payload.workspace?.projects[0]?.name ?? "project")
       : payload.kind === "collection"
         ? slug(payload.collection?.name ?? "collection")
         : slug(payload.request?.name ?? "request");
-  const filename = `openpostman.dev-${payload.kind}-${namePart}-${stamp}.json`;
+  const filename = `openpostman.dev-${payload.kind === "workspace" ? "project" : payload.kind}-${namePart}-${stamp}.json`;
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");

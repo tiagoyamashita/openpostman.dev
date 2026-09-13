@@ -123,8 +123,8 @@ export default function Landing() {
           <article className="landing-card">
             <h3>Export anything</h3>
             <p>
-              Download the full workspace, a single collection, or one request as JSON, and load
-              it back on another machine.
+              Download the current project (with its environments), a single collection, or one
+              request as JSON, and load it back on another machine.
             </p>
           </article>
         </div>

@@ -47,14 +47,14 @@ export type Project = {
   name: string;
   groups: WebsiteGroup[];
   collections: Collection[];
+  environments: Environment[];
+  activeEnvironmentId: string | null;
 };
 
 export type Workspace = {
   version: 1;
   projects: Project[];
   activeProjectId: string | null;
-  environments: Environment[];
-  activeEnvironmentId: string | null;
 };
 
 export type User = {
@@ -123,6 +123,8 @@ export function emptyProject(name = "My Project"): Project {
     name,
     groups: [],
     collections: [],
+    environments: [],
+    activeEnvironmentId: null,
   };
 }
 
@@ -133,13 +135,13 @@ export function emptyWorkspace(): Workspace {
     name: "My Project",
     groups: [group],
     collections: [emptyCollection("My Collection", group.id)],
+    environments: [],
+    activeEnvironmentId: null,
   };
   return {
     version: 1,
     projects: [project],
     activeProjectId: project.id,
-    environments: [],
-    activeEnvironmentId: null,
   };
 }
 
@@ -212,7 +214,41 @@ function normalizeGroup(g: Record<string, unknown>): WebsiteGroup {
   };
 }
 
-function normalizeProject(p: Record<string, unknown>): Project {
+function copyEnvironments(value: unknown): Environment[] {
+  if (!Array.isArray(value)) return [];
+  return value.map(normalizeEnvironment);
+}
+
+function pickActiveEnvironmentId(
+  environments: Environment[],
+  candidate: unknown,
+): string | null {
+  if (typeof candidate === "string" && environments.some((env) => env.id === candidate)) {
+    return candidate;
+  }
+  return environments[0]?.id ?? null;
+}
+
+function normalizeProject(
+  p: Record<string, unknown>,
+  inherited: { environments: Environment[]; activeEnvironmentId: string | null },
+): Project {
+  const ownEnvironments = Array.isArray(p.environments)
+    ? p.environments.map(normalizeEnvironment)
+    : null;
+  const environments =
+    ownEnvironments && ownEnvironments.length > 0
+      ? ownEnvironments
+      : inherited.environments.map((env) => ({
+          ...env,
+          variables: { ...env.variables },
+        }));
+  const activeEnvironmentId = pickActiveEnvironmentId(
+    environments,
+    ownEnvironments && ownEnvironments.length > 0
+      ? p.activeEnvironmentId
+      : inherited.activeEnvironmentId,
+  );
   return {
     id: typeof p.id === "string" ? p.id : createId(),
     name: typeof p.name === "string" ? p.name : "Project",
@@ -222,6 +258,8 @@ function normalizeProject(p: Record<string, unknown>): Project {
     collections: Array.isArray(p.collections)
       ? p.collections.filter(isRecord).map(normalizeCollection)
       : [],
+    environments,
+    activeEnvironmentId,
   };
 }
 
@@ -229,17 +267,18 @@ function normalizeProject(p: Record<string, unknown>): Project {
 export function normalizeWorkspace(value: unknown): Workspace | null {
   if (!isRecord(value) || value.version !== 1) return null;
 
-  const environments = Array.isArray(value.environments)
-    ? value.environments.map(normalizeEnvironment)
-    : [];
-  const activeEnvironmentId =
-    typeof value.activeEnvironmentId === "string" &&
-    environments.some((env) => env.id === value.activeEnvironmentId)
-      ? value.activeEnvironmentId
-      : (environments[0]?.id ?? null);
+  const inheritedEnvironments = copyEnvironments(value.environments);
+  const inheritedActiveId = pickActiveEnvironmentId(
+    inheritedEnvironments,
+    value.activeEnvironmentId,
+  );
+  const inherited = {
+    environments: inheritedEnvironments,
+    activeEnvironmentId: inheritedActiveId,
+  };
 
   if (Array.isArray(value.projects) && value.projects.length > 0) {
-    const projects = value.projects.filter(isRecord).map(normalizeProject);
+    const projects = value.projects.filter(isRecord).map((p) => normalizeProject(p, inherited));
     const activeProjectId =
       typeof value.activeProjectId === "string" &&
       projects.some((p) => p.id === value.activeProjectId)
@@ -249,8 +288,6 @@ export function normalizeWorkspace(value: unknown): Workspace | null {
       version: 1,
       projects,
       activeProjectId,
-      environments,
-      activeEnvironmentId,
     };
   }
 
@@ -266,14 +303,14 @@ export function normalizeWorkspace(value: unknown): Workspace | null {
     name: "My Project",
     groups,
     collections,
+    environments: inherited.environments,
+    activeEnvironmentId: inherited.activeEnvironmentId,
   };
 
   return {
     version: 1,
     projects: [project],
     activeProjectId: project.id,
-    environments,
-    activeEnvironmentId,
   };
 }
 
@@ -286,28 +323,52 @@ export function getActiveProject(workspace: Workspace): Project | null {
 }
 
 export function getActiveEnvironment(workspace: Workspace): Environment | null {
+  const project = getActiveProject(workspace);
+  if (!project) return null;
   return (
-    workspace.environments.find((env) => env.id === workspace.activeEnvironmentId) ??
-    workspace.environments[0] ??
+    project.environments.find((env) => env.id === project.activeEnvironmentId) ??
+    project.environments[0] ??
     null
   );
 }
 
 export function ensureActiveEnvironment(workspace: Workspace): Workspace {
-  if (workspace.environments.length > 0 && workspace.activeEnvironmentId) {
-    const exists = workspace.environments.some((env) => env.id === workspace.activeEnvironmentId);
+  const project = getActiveProject(workspace);
+  if (!project) return workspace;
+  if (project.environments.length > 0 && project.activeEnvironmentId) {
+    const exists = project.environments.some((env) => env.id === project.activeEnvironmentId);
     if (exists) return workspace;
-    return { ...workspace, activeEnvironmentId: workspace.environments[0]!.id };
+    return withActiveProject(workspace, (active) => ({
+      ...active,
+      activeEnvironmentId: active.environments[0]!.id,
+    }));
   }
-  if (workspace.environments.length > 0) {
-    return { ...workspace, activeEnvironmentId: workspace.environments[0]!.id };
+  if (project.environments.length > 0) {
+    return withActiveProject(workspace, (active) => ({
+      ...active,
+      activeEnvironmentId: active.environments[0]!.id,
+    }));
   }
   const env = emptyEnvironment();
-  return {
-    ...workspace,
+  return withActiveProject(workspace, (active) => ({
+    ...active,
     environments: [env],
     activeEnvironmentId: env.id,
-  };
+  }));
+}
+
+export function patchActiveEnvironment(
+  workspace: Workspace,
+  updater: (env: Environment) => Environment,
+): Workspace {
+  const ensured = ensureActiveEnvironment(workspace);
+  const project = getActiveProject(ensured);
+  const envId = project?.activeEnvironmentId;
+  if (!project || !envId) return ensured;
+  return withActiveProject(ensured, (active) => ({
+    ...active,
+    environments: active.environments.map((env) => (env.id === envId ? updater(env) : env)),
+  }));
 }
 
 export function withActiveProject(

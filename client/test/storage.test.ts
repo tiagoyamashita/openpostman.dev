@@ -47,11 +47,9 @@ describe("local workspace storage", () => {
       JSON.stringify({
         version: 1,
         projects: [
-          { id: "p1", name: "Legacy Project", groups: [], collections: [] },
+          { id: "p1", name: "Legacy Project", groups: [], collections: [], environments: [], activeEnvironmentId: null },
         ],
         activeProjectId: "p1",
-        environments: [],
-        activeEnvironmentId: null,
       }),
     );
     expect(loadLocalWorkspace().projects[0]?.name).toBe("Legacy Project");

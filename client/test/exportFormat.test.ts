@@ -17,6 +17,27 @@ describe("buildExport / parseOpenPostmanExport", () => {
     expect(parsed.workspace?.projects[0]?.name).toBe("My Project");
   });
 
+  it("exports only the current project and its environments", () => {
+    const workspace = emptyWorkspace();
+    const other = {
+      ...workspace.projects[0]!,
+      id: "p-other",
+      name: "Other Project",
+      environments: [{ id: "e-other", name: "Other", variables: { host: "other" } }],
+      activeEnvironmentId: "e-other",
+    };
+    workspace.projects.push(other);
+    const active = workspace.projects[0]!;
+    active.environments = [{ id: "e-active", name: "Dev", variables: { token: "abc" } }];
+    active.activeEnvironmentId = "e-active";
+    workspace.activeProjectId = active.id;
+
+    const payload = buildExport("workspace", workspace, null, null);
+    expect(payload.workspace?.projects).toHaveLength(1);
+    expect(payload.workspace?.projects[0]?.name).toBe("My Project");
+    expect(payload.workspace?.projects[0]?.environments[0]?.variables.token).toBe("abc");
+  });
+
   it("still loads exports written before the rename", () => {
     const workspace = emptyWorkspace();
     const parsed = parseOpenPostmanExport(
@@ -67,5 +88,23 @@ describe("applyExportToWorkspace", () => {
     const payload = buildExport("request", current, collection.id, collection.requests[0]!.id);
     const result = applyExportToWorkspace(current, payload, collection.id);
     expect(result.workspace.projects[0]!.collections[0]!.requests.length).toBe(2);
+  });
+
+  it("imports an exported project alongside the current one, including env vars", () => {
+    const current = emptyWorkspace();
+    current.projects[0]!.name = "Keep me";
+    const incoming = emptyWorkspace();
+    incoming.projects[0]!.name = "Imported API";
+    incoming.projects[0]!.environments = [
+      { id: "e1", name: "Staging", variables: { base: "https://stg.example" } },
+    ];
+    incoming.projects[0]!.activeEnvironmentId = "e1";
+    const payload = buildExport("workspace", incoming, null, null);
+    const result = applyExportToWorkspace(current, payload, null);
+    const names = result.workspace.projects.map((p) => p.name);
+    expect(names).toContain("Keep me");
+    expect(names).toContain("Imported API");
+    const imported = result.workspace.projects.find((p) => p.name === "Imported API");
+    expect(imported?.environments[0]?.variables.base).toBe("https://stg.example");
   });
 });

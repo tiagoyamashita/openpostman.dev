@@ -181,7 +181,7 @@ One JSON document is the whole library. Guest copies live in `localStorage`; sig
 ```mermaid
 erDiagram
   Workspace ||--o{ Project : contains
-  Workspace ||--o{ Environment : contains
+  Project ||--o{ Environment : contains
   Project ||--o{ WebsiteGroup : groups
   Project ||--o{ Collection : contains
   Collection ||--o{ ApiRequest : contains
@@ -193,11 +193,11 @@ erDiagram
   Workspace {
     int version
     string activeProjectId
-    string activeEnvironmentId
   }
   Project {
     string id
     string name
+    string activeEnvironmentId
   }
   WebsiteGroup {
     string id
@@ -307,9 +307,9 @@ The proxy allows only `http:` / `https:`, blocks localhost, `.local`, cloud meta
 
 | Control | Result |
 |---------|--------|
-| **Export all** | Full workspace JSON (`format: "openpostman.dev"`) |
+| **Export project** | Current project plus its environments (`format: "openpostman.dev"`) |
 | **Export request** | Current request only |
-| **Load** | Workspace replaces (with new ids); collection or request is merged into the active project |
+| **Load** | Project export is merged in (with new ids); collection or request is merged into the active project |
 
 ## Setup
 
