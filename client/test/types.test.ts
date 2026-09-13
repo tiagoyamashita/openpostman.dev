@@ -48,16 +48,46 @@ describe("normalizeWorkspace", () => {
     });
     expect(workspace?.projects).toHaveLength(1);
     expect(workspace?.projects[0]?.collections[0]?.name).toBe("Legacy");
-    expect(workspace?.environments[0]?.variables.host).toBe("https://dev");
+    expect(workspace?.projects[0]?.environments[0]?.variables.host).toBe("https://dev");
+  });
+
+  it("keeps environments on each project instead of the workspace", () => {
+    const workspace = normalizeWorkspace({
+      version: 1,
+      projects: [
+        {
+          id: "p1",
+          name: "One",
+          groups: [],
+          collections: [],
+          environments: [{ id: "e1", name: "Dev", variables: { host: "a" } }],
+          activeEnvironmentId: "e1",
+        },
+        {
+          id: "p2",
+          name: "Two",
+          groups: [],
+          collections: [],
+          environments: [{ id: "e2", name: "Prod", variables: { host: "b" } }],
+          activeEnvironmentId: "e2",
+        },
+      ],
+      activeProjectId: "p2",
+    });
+    expect(workspace?.projects[0]?.environments[0]?.variables.host).toBe("a");
+    expect(workspace?.projects[1]?.environments[0]?.variables.host).toBe("b");
+    expect(workspace && "environments" in workspace).toBe(false);
+    expect((workspace as { environments?: unknown }).environments).toBeUndefined();
   });
 });
 
 describe("ensureActiveEnvironment", () => {
-  it("creates a default environment when none exist", () => {
+  it("creates a default environment on the active project when none exist", () => {
     const workspace = emptyWorkspace();
-    expect(workspace.environments).toHaveLength(0);
+    expect(getActiveProject(workspace)?.environments).toHaveLength(0);
     const next = ensureActiveEnvironment(workspace);
-    expect(next.environments).toHaveLength(1);
-    expect(next.activeEnvironmentId).toBe(next.environments[0]?.id);
+    const project = getActiveProject(next);
+    expect(project?.environments).toHaveLength(1);
+    expect(project?.activeEnvironmentId).toBe(project?.environments[0]?.id);
   });
 });

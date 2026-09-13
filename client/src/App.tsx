@@ -34,6 +34,7 @@ import {
   getActiveEnvironment,
   getActiveProject,
   normalizeWorkspace,
+  patchActiveEnvironment,
   withActiveProject,
   type ApiRequest,
   type BodyType,
@@ -199,56 +200,54 @@ export default function App() {
 
   function setEnvironmentVariables(variables: Record<string, string>) {
     if (!workspace) return;
-    const ensured = withEnsuredEnv(workspace);
-    const envId = ensured.activeEnvironmentId!;
-    commitWorkspace({
-      ...ensured,
-      environments: ensured.environments.map((env) =>
-        env.id === envId ? { ...env, variables } : env,
-      ),
-    });
+    commitWorkspace(patchActiveEnvironment(workspace, (env) => ({ ...env, variables })));
   }
 
   function setEnvironmentVariable(name: string, value: string) {
     const key = name.trim();
     if (!key || !workspace) return;
-    const ensured = withEnsuredEnv(workspace);
-    const envId = ensured.activeEnvironmentId!;
-    commitWorkspace({
-      ...ensured,
-      environments: ensured.environments.map((env) =>
-        env.id === envId
-          ? { ...env, variables: { ...env.variables, [key]: value } }
-          : env,
-      ),
-    });
+    commitWorkspace(
+      patchActiveEnvironment(workspace, (env) => ({
+        ...env,
+        variables: { ...env.variables, [key]: value },
+      })),
+    );
   }
 
   async function addEnvironment() {
     if (!workspace) return;
+    const projectEnvs = getActiveProject(workspace)?.environments ?? [];
     const values = await prompt({
       title: "New environment",
       fields: [
         {
           id: "name",
           label: "Name",
-          defaultValue: `Env ${workspace.environments.length + 1}`,
+          defaultValue: `Env ${projectEnvs.length + 1}`,
         },
       ],
     });
     const name = values?.name.trim();
     if (!name) return;
     const env = emptyEnvironment(name);
-    commitWorkspace({
-      ...workspace,
-      environments: [...workspace.environments, env],
-      activeEnvironmentId: env.id,
-    });
+    commitWorkspace(
+      withActiveProject(workspace, (active) => ({
+        ...active,
+        environments: [...active.environments, env],
+        activeEnvironmentId: env.id,
+      })),
+    );
   }
 
   function switchEnvironment(envId: string) {
     if (!workspace) return;
-    commitWorkspace({ ...workspace, activeEnvironmentId: envId }, false);
+    commitWorkspace(
+      withActiveProject(workspace, (active) => ({
+        ...active,
+        activeEnvironmentId: envId,
+      })),
+      false,
+    );
   }
 
   function upsertRequestHeader(key: string, value: string) {
@@ -301,11 +300,13 @@ export default function App() {
     const name = values?.name.trim();
     if (!name) return;
     const next = emptyProject(name);
-    setWorkspace({
-      ...workspace,
-      projects: [...workspace.projects, next],
-      activeProjectId: next.id,
-    });
+    setWorkspace(
+      ensureActiveEnvironment({
+        ...workspace,
+        projects: [...workspace.projects, next],
+        activeProjectId: next.id,
+      }),
+    );
     setActiveGroupId(next.groups[0]?.id ?? null);
     const sel = selectFirst(next);
     setCollectionId(sel.collectionId);
@@ -529,7 +530,7 @@ export default function App() {
     setError(null);
   }
 
-  function handleExportAll() {
+  function handleExportProject() {
     if (!workspace) return;
     try {
       downloadExport(buildExport("workspace", workspace, collectionId, requestId));
@@ -688,12 +689,9 @@ export default function App() {
       setResponse(result);
       setResponseTab("body");
       if (env && nextVars !== vars) {
-        commitWorkspace({
-          ...ensured,
-          environments: ensured.environments.map((item) =>
-            item.id === env.id ? { ...item, variables: nextVars } : item,
-          ),
-        });
+        commitWorkspace(
+          patchActiveEnvironment(ensured, (item) => ({ ...item, variables: nextVars })),
+        );
       } else if (ensured !== workspace) {
         commitWorkspace(ensured, false);
       }
@@ -778,13 +776,9 @@ export default function App() {
       }
 
       if (env) {
-        ensured = {
-          ...ensured,
-          environments: ensured.environments.map((item) =>
-            item.id === env!.id ? { ...item, variables: vars } : item,
-          ),
-        };
-        commitWorkspace(ensured);
+        commitWorkspace(
+          patchActiveEnvironment(ensured, (item) => ({ ...item, variables: vars })),
+        );
       }
     } finally {
       setRunningCollection(false);
@@ -898,8 +892,8 @@ export default function App() {
             <a className="btn" href="/" target="_blank" rel="noreferrer">
               About
             </a>
-            <button className="btn" type="button" onClick={handleExportAll}>
-              Export all
+            <button className="btn" type="button" onClick={handleExportProject}>
+              Export project
             </button>
             <button
               className="btn"
@@ -1038,7 +1032,7 @@ export default function App() {
                   if (e.target.value) switchEnvironment(e.target.value);
                 }}
               >
-                {workspace.environments.map((env) => (
+                {project.environments.map((env) => (
                   <option key={env.id} value={env.id}>
                     {env.name}
                   </option>
@@ -1052,7 +1046,7 @@ export default function App() {
                 type="button"
                 title="Edit variables"
                 onClick={() => {
-                  if (!workspace.environments.length) {
+                  if (!project.environments.length) {
                     commitWorkspace(withEnsuredEnv(workspace), false);
                   }
                   setEnvPanelOpen((open) => !open);
