@@ -8,6 +8,7 @@ import cookieParser from "cookie-parser";
 import { assertAuthConfig, config, SESSION_COOKIE_NAME } from "./config.js";
 import authRoutes from "./routes/auth.js";
 import workspaceRoutes from "./routes/workspace.js";
+import shareRoutes from "./routes/share.js";
 import proxyRoutes from "./routes/proxy.js";
 
 assertAuthConfig();
@@ -46,6 +47,7 @@ app.get("/api/health", (_req, res) => {
 
 app.use("/auth", authRoutes);
 app.use("/api", workspaceRoutes);
+app.use("/api", shareRoutes);
 app.use("/api", proxyRoutes);
 
 if (fs.existsSync(publicDir)) {

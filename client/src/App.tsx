@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   fetchMe,
+  fetchShareLink,
+  inviteShareCollaborator,
   loadWorkspace,
   logout as apiLogout,
   proxyRequest,
@@ -47,6 +49,15 @@ import {
 
 type EditorTab = "headers" | "body" | "extracts";
 type ResponseTab = "body" | "headers";
+
+function shareTargetFromHash(): string | null {
+  const q = window.location.hash.indexOf("?");
+  if (q === -1) return null;
+  const share = new URLSearchParams(window.location.hash.slice(q + 1)).get("share");
+  if (!share) return null;
+  const trimmed = share.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
 
 type RunStepStatus = {
   requestId: string;
@@ -96,6 +107,7 @@ export default function App() {
   const [saving, setSaving] = useState(false);
   const [sending, setSending] = useState(false);
   const [dirty, setDirty] = useState(false);
+  const [shareNotice, setShareNotice] = useState<string | null>(() => shareTargetFromHash());
   const [importOpen, setImportOpen] = useState(false);
   const [activeGroupId, setActiveGroupId] = useState<string | null>(null);
   const [envPanelOpen, setEnvPanelOpen] = useState(false);
@@ -106,6 +118,14 @@ export default function App() {
   const [runningCollection, setRunningCollection] = useState(false);
   const loadInputRef = useRef<HTMLInputElement>(null);
   const { confirm, prompt, dialog } = useAppDialog();
+
+  useEffect(() => {
+    function syncShare() {
+      setShareNotice(shareTargetFromHash());
+    }
+    window.addEventListener("hashchange", syncShare);
+    return () => window.removeEventListener("hashchange", syncShare);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -566,6 +586,43 @@ export default function App() {
     }
   }
 
+  async function handleShare() {
+    if (!user) return;
+    setError(null);
+    try {
+      const share = await fetchShareLink();
+      const appLink = `${window.location.origin}/#/app?share=${encodeURIComponent(`${share.owner}/${share.repo}`)}`;
+      try {
+        await navigator.clipboard.writeText(`${appLink}\n${share.htmlUrl}`);
+      } catch {
+        // clipboard may be blocked; the dialog still shows the URL
+      }
+      const values = await prompt({
+        title: "Share library",
+        message:
+          "Copy the link to your private openpostman GitHub repo. Invite a GitHub username so they can accept access, then open this link while signed in.",
+        fields: [
+          { id: "link", label: "Share link", defaultValue: share.htmlUrl },
+          { id: "username", label: "GitHub username to invite", placeholder: "octocat" },
+        ],
+        confirmLabel: "Invite",
+      });
+      if (!values) return;
+      const username = values.username.trim();
+      if (!username) return;
+      const invited = await inviteShareCollaborator(username);
+      await confirm({
+        title: "Invite sent",
+        message: invited.alreadyCollaborator
+          ? `${username} already has access to ${share.htmlUrl}`
+          : `${username} will get a GitHub invite to ${share.htmlUrl}. They must accept it before they can open the private repo.`,
+        confirmLabel: "OK",
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Share failed");
+    }
+  }
+
   async function sendPreparedRequest(
     request: ApiRequest,
     vars: Record<string, string>,
@@ -871,6 +928,11 @@ export default function App() {
               {saveLabel}
             </button>
             {user ? (
+              <button className="btn" type="button" onClick={() => void handleShare()}>
+                Share
+              </button>
+            ) : null}
+            {user ? (
               <>
                 <div className="user-chip">
                   <img src={user.avatar} alt="" />
@@ -1112,6 +1174,12 @@ export default function App() {
 
         <section className="main-pane">
           {error ? <div className="error-banner">{error}</div> : null}
+          {shareNotice ? (
+            <div className="share-banner">
+              Shared library <code>{shareNotice}</code>. Sign in, accept the GitHub invite to that
+              private repo, then open the repo from the share link.
+            </div>
+          ) : null}
           {unresolvedWarning ? (
             <div className="warn-banner">{unresolvedWarning}</div>
           ) : null}

@@ -28,6 +28,12 @@ describe("Express app", () => {
     expect(res.body.error).toMatch(/Unauthorized/i);
   });
 
+  it("rejects unauthenticated share access", async () => {
+    const res = await request(app).get("/api/share");
+    expect(res.status).toBe(401);
+    expect(res.body.error).toMatch(/Unauthorized/i);
+  });
+
   it("starts GitHub OAuth", async () => {
     const res = await request(app).get("/auth/github");
     expect(res.status).toBe(302);
