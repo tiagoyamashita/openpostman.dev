@@ -678,6 +678,29 @@ button {
   font-size: 0.8rem;
 }
 
+.btn-danger {
+  background: var(--danger);
+  border-color: transparent;
+  color: #1a120e;
+  font-weight: 600;
+}
+
+.btn-danger:hover {
+  filter: brightness(1.08);
+}
+
+.modal-sm {
+  width: min(420px, 100%);
+}
+
+.modal-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
 .modal-backdrop {
   position: fixed;
   inset: 0;

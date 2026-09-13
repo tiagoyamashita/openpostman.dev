@@ -7,6 +7,7 @@ import {
   saveWorkspace,
 } from "./api";
 import ImportOpenApiModal from "./ImportOpenApiModal";
+import { useAppDialog } from "./AppDialog";
 import {
   applyExtracts,
   extractFromResponse,
@@ -104,6 +105,7 @@ export default function App() {
   const [runSteps, setRunSteps] = useState<RunStepStatus[]>([]);
   const [runningCollection, setRunningCollection] = useState(false);
   const loadInputRef = useRef<HTMLInputElement>(null);
+  const { confirm, prompt, dialog } = useAppDialog();
 
   useEffect(() => {
     let cancelled = false;
@@ -202,11 +204,21 @@ export default function App() {
     });
   }
 
-  function addEnvironment() {
+  async function addEnvironment() {
     if (!workspace) return;
-    const name = window.prompt("Environment name", `Env ${workspace.environments.length + 1}`);
-    if (!name?.trim()) return;
-    const env = emptyEnvironment(name.trim());
+    const values = await prompt({
+      title: "New environment",
+      fields: [
+        {
+          id: "name",
+          label: "Name",
+          defaultValue: `Env ${workspace.environments.length + 1}`,
+        },
+      ],
+    });
+    const name = values?.name.trim();
+    if (!name) return;
+    const env = emptyEnvironment(name);
     commitWorkspace({
       ...workspace,
       environments: [...workspace.environments, env],
@@ -254,11 +266,21 @@ export default function App() {
     updateRequest({ headers });
   }
 
-  function addProject() {
+  async function addProject() {
     if (!workspace) return;
-    const name = window.prompt("Project name", `Project ${workspace.projects.length + 1}`);
-    if (!name?.trim()) return;
-    const next = emptyProject(name.trim());
+    const values = await prompt({
+      title: "New project",
+      fields: [
+        {
+          id: "name",
+          label: "Name",
+          defaultValue: `Project ${workspace.projects.length + 1}`,
+        },
+      ],
+    });
+    const name = values?.name.trim();
+    if (!name) return;
+    const next = emptyProject(name);
     setWorkspace({
       ...workspace,
       projects: [...workspace.projects, next],
@@ -284,13 +306,19 @@ export default function App() {
     setResponse(null);
   }
 
-  function deleteProject(projectId: string) {
+  async function deleteProject(projectId: string) {
     if (!workspace) return;
     if (workspace.projects.length <= 1) {
       setError("Keep at least one project");
       return;
     }
-    if (!window.confirm("Delete this project and all of its websites?")) return;
+    const ok = await confirm({
+      title: "Delete project",
+      message: "Delete this project and all of its websites?",
+      confirmLabel: "Delete",
+      danger: true,
+    });
+    if (!ok) return;
     const remaining = workspace.projects.filter((p) => p.id !== projectId);
     const nextActive =
       workspace.activeProjectId === projectId
@@ -310,12 +338,24 @@ export default function App() {
     setDirty(true);
   }
 
-  function addGroup() {
+  async function addGroup() {
     if (!workspace) return;
-    const name = window.prompt("Website / group name", "New website");
-    if (!name?.trim()) return;
-    const website = window.prompt("Website URL (optional)", "https://") ?? "";
-    const group = emptyGroup(name.trim(), website.trim());
+    const values = await prompt({
+      title: "New website",
+      fields: [
+        { id: "name", label: "Name", defaultValue: "New website" },
+        {
+          id: "website",
+          label: "URL (optional)",
+          defaultValue: "https://",
+          placeholder: "https://",
+        },
+      ],
+    });
+    const name = values?.name.trim();
+    if (!name) return;
+    const website = (values?.website ?? "").trim();
+    const group = emptyGroup(name, website);
     setWorkspace(
       withActiveProject(workspace, (active) => ({
         ...active,
@@ -357,9 +397,15 @@ export default function App() {
     setDirty(true);
   }
 
-  function deleteGroup(groupId: string) {
+  async function deleteGroup(groupId: string) {
     if (!workspace) return;
-    if (!window.confirm("Delete this website group? Its collections become ungrouped.")) return;
+    const ok = await confirm({
+      title: "Delete website",
+      message: "Delete this website group? Its collections become ungrouped.",
+      confirmLabel: "Delete",
+      danger: true,
+    });
+    if (!ok) return;
     setWorkspace(
       withActiveProject(workspace, (active) => ({
         ...active,
@@ -373,9 +419,15 @@ export default function App() {
     setDirty(true);
   }
 
-  function deleteCollection(targetCollectionId: string) {
+  async function deleteCollection(targetCollectionId: string) {
     if (!workspace) return;
-    if (!window.confirm("Delete this collection and all of its requests?")) return;
+    const ok = await confirm({
+      title: "Delete collection",
+      message: "Delete this collection and all of its requests?",
+      confirmLabel: "Delete",
+      danger: true,
+    });
+    if (!ok) return;
     const nextWorkspace = withActiveProject(workspace, (active) => ({
       ...active,
       collections: active.collections.filter(
@@ -392,9 +444,15 @@ export default function App() {
     setDirty(true);
   }
 
-  function deleteRequest(targetCollectionId: string, targetRequestId: string) {
+  async function deleteRequest(targetCollectionId: string, targetRequestId: string) {
     if (!workspace) return;
-    if (!window.confirm("Delete this request?")) return;
+    const ok = await confirm({
+      title: "Delete request",
+      message: "Delete this request?",
+      confirmLabel: "Delete",
+      danger: true,
+    });
+    if (!ok) return;
     const nextWorkspace = withActiveProject(workspace, (active) => ({
       ...active,
       collections: active.collections.map((collection) => {
@@ -698,11 +756,21 @@ export default function App() {
     setEditorTab("body");
   }
 
-  function saveHeaderAsVariable(headerName: string, headerValue: string) {
+  async function saveHeaderAsVariable(headerName: string, headerValue: string) {
     const suggested = headerName.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
-    const name = window.prompt("Variable name", suggested || "header_value");
-    if (!name?.trim()) return;
-    setEnvironmentVariable(name.trim(), headerValue);
+    const values = await prompt({
+      title: "Save header as variable",
+      fields: [
+        {
+          id: "name",
+          label: "Variable name",
+          defaultValue: suggested || "header_value",
+        },
+      ],
+    });
+    const name = values?.name.trim();
+    if (!name) return;
+    setEnvironmentVariable(name, headerValue);
   }
 
   function applyHeaderToRequest(headerName: string, headerValue: string) {
@@ -958,9 +1026,15 @@ export default function App() {
                   className="btn"
                   type="button"
                   onClick={() => {
-                    const name = window.prompt("Variable name");
-                    if (!name?.trim()) return;
-                    setEnvironmentVariable(name.trim(), "");
+                    void (async () => {
+                      const values = await prompt({
+                        title: "New variable",
+                        fields: [{ id: "name", label: "Name", placeholder: "token" }],
+                      });
+                      const name = values?.name.trim();
+                      if (!name) return;
+                      setEnvironmentVariable(name, "");
+                    })();
                   }}
                 >
                   Add variable
@@ -1350,6 +1424,7 @@ export default function App() {
         onClose={() => setImportOpen(false)}
         onImport={importCollection}
       />
+      {dialog}
     </div>
   );
 }
