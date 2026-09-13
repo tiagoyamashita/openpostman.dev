@@ -33,7 +33,7 @@ Guest mode works with no account: collections stay in this browser’s `localSto
 - **Extract** values from a response body or header into environment variables for the next request
 - Import **OpenAPI 3.x** and **Swagger 2.0** (paste, file, or URL)
 - Export / load the workspace, a collection, or a single request as JSON
-- Share one library by collaborating on the private Gist (scopes: `read:user` and `gist` only)
+- Share one library by collaborating on the private Gist (scopes: `read:user`, `gist`, and `repo`)
 
 ## How the project is put together
 
@@ -91,6 +91,7 @@ openpostman.dev
 │       ├── config.ts      env + OAuth callback + app URL
 │       ├── auth.ts        requireAuth
 │       ├── gist.ts        find/create/update workspace Gist
+│       ├── github-repo.ts ensure private openpostman repo on sign-in
 │       ├── types.ts       shared Workspace + Gist filenames
 │       └── routes/        auth, workspace, proxy
 ├── vercel.json
@@ -130,9 +131,10 @@ sequenceDiagram
 
   User->>Browser: Sign in with GitHub
   Browser->>Server: GET /auth/github
-  Server->>GitHub: authorize (read:user gist)
+  Server->>GitHub: authorize (read:user gist repo)
   GitHub->>Server: GET /auth/github/callback?code=
   Server->>GitHub: exchange code for token
+  Server->>GitHub: GET or create private repo openpostman
   Server->>Browser: session cookie openpostman.sid<br/>redirect /#/app
 
   Browser->>Server: GET /auth/me
@@ -280,7 +282,7 @@ Older names are still **read** and migrated on the next save:
 
 Session cookie name: `openpostman.sid`. Changing it signs everyone out once.
 
-OAuth scopes: `read:user`, `gist`. No repository access.
+OAuth scopes: `read:user`, `gist`, `repo`. After sign-in, OpenPostman creates a private `openpostman` repository on the account if it does not already exist. Workspace JSON still lives in the Gist.
 
 ## Sending a request
 

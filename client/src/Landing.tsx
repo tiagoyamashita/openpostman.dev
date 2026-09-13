@@ -145,8 +145,9 @@ export default function Landing() {
             <div>
               <h3>Sign in with GitHub</h3>
               <p>
-                OpenPostman asks for <code>read:user</code> and <code>gist</code> — nothing else,
-                and no access to your repositories.
+                OpenPostman asks for <code>read:user</code>, <code>gist</code>, and <code>repo</code>{" "}
+                so it can create a private <code>openpostman</code> repository in your account if
+                one is not already there.
               </p>
             </div>
           </li>
